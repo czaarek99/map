@@ -2,7 +2,7 @@ package com.czaarek99.custommap;
 
 public class CustomMap<K, V> {
 
-    private static final int DEFAULT_TABLE_CAPCITY = 16;
+    private static final int DEFAULT_TABLE_CAPCITY = 8;
 
     private Node<K, V>[] table = new Node[DEFAULT_TABLE_CAPCITY];
     private int tableCapacity = DEFAULT_TABLE_CAPCITY;
@@ -10,6 +10,25 @@ public class CustomMap<K, V> {
 
     private int hash(K key) {
         return key.hashCode() & (this.tableCapacity - 1);
+    }
+
+    private void realloc(int newCapacity) {
+        this.tableCapacity = newCapacity;
+
+        Node<K, V>[] oldTable = this.table.clone();
+
+        this.table = new Node[newCapacity];
+        this.size = 0;
+
+        for(int i = 0; i < oldTable.length; i++) {
+            Node<K, V> node = oldTable[i];
+
+            while(node != null) {
+                this.put(node.key, node.value);
+
+                node = node.next;
+            }
+        }
     }
 
     public boolean containsKey(K key) {
@@ -38,6 +57,10 @@ public class CustomMap<K, V> {
     }
 
     public void put(K key, V value) {
+        if(this.size == this.tableCapacity) {
+            this.realloc(this.tableCapacity * 2);
+        }
+
         int hash = this.hash(key);
 
         if(table[hash] == null) {
@@ -46,7 +69,8 @@ public class CustomMap<K, V> {
             Node<K, V> node = table[hash];
 
             while(true) {
-                if(node.value.equals(value)) {
+                if(node.key.equals(key)) {
+                    node.setValue(value);
                     return;
                 }
 
@@ -89,6 +113,10 @@ public class CustomMap<K, V> {
                 }
             }
         }
+
+        if(this.size < this.tableCapacity / 4) {
+            this.realloc(this.tableCapacity / 2);
+        }
     }
 
     public int getSize() {
@@ -98,7 +126,7 @@ public class CustomMap<K, V> {
     static class Node<K, V> {
         final int hash;
         final K key;
-        final V value;
+        V value;
         Node<K, V> next;
 
         Node(int hash, K key, V value, Node<K, V> next) {
@@ -114,6 +142,15 @@ public class CustomMap<K, V> {
 
         void setNext(Node<K, V> next) {
             this.next = next;
+        }
+
+        void setValue(V value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return "Node(key: " + key + ", val: " + this.value + ")";
         }
     }
 
